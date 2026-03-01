@@ -86,6 +86,37 @@ body{
 .btn-c{background:linear-gradient(180deg,#383838,#222);color:#999;padding:7px 14px;font-size:8px}
 .footer{text-align:center;color:#444;font-size:7px;letter-spacing:2px;margin-top:8px}
 .hint{text-align:center;color:#555;font-size:8px;letter-spacing:1px;margin-top:6px}
+
+/* ── CONTROLES TÁCTILES MÓVIL ── */
+.touch-controls{
+  display:none;
+  justify-content:center;
+  align-items:center;
+  gap:40px;
+  margin-top:18px;
+}
+.touch-btn{
+  width:72px;height:72px;
+  background:linear-gradient(180deg,#2e2e2e,#1a1a1a);
+  border:2px solid #555;border-radius:50%;
+  color:#aaa;font-size:30px;line-height:1;
+  display:flex;justify-content:center;align-items:center;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+  box-shadow:0 4px 0 #111,0 0 12px rgba(0,0,0,.6);
+  transition:all .08s;
+  -webkit-tap-highlight-color:transparent;
+}
+.touch-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #111}
+
+/* ── RESPONSIVE ── */
+@media(max-width:420px){
+  .watch{width:96vw;padding:14px 12px 16px}
+  .seg7{font-size:22px}
+}
+@media(hover:none) and (pointer:coarse){
+  .touch-controls{display:flex}
+  .hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -136,6 +167,12 @@ body{
   </div>
   <div class="footer">GD-8 &middot; WR 20M &middot; JAPAN</div>
   <div class="hint">&larr;&rarr; CARRIL &nbsp;|&nbsp; ENTER INICIAR</div>
+</div>
+
+<div class="touch-controls">
+  <button class="touch-btn" id="btnLeft"  aria-label="Izquierda">&#9664;</button>
+  <button class="touch-btn" id="btnStart2" aria-label="Iniciar">&#9654;</button>
+  <button class="touch-btn" id="btnRight" aria-label="Derecha">&#9654;</button>
 </div>
 
 <script>
@@ -411,6 +448,27 @@ document.getElementById("btnReset").addEventListener("click", () => {
   laneX = LANE_CX[1]; lane = 1;
   document.getElementById("score").textContent = "00"; updateLives();
 });
+
+function goLeft()  { if (playing && !over) { lane = Math.max(0, lane - 1); moveSnd(); } }
+function goRight() { if (playing && !over) { lane = Math.min(2, lane + 1); moveSnd(); } }
+
+document.getElementById("btnLeft")  .addEventListener("touchstart", e => { e.preventDefault(); goLeft();    }, { passive:false });
+document.getElementById("btnRight") .addEventListener("touchstart", e => { e.preventDefault(); goRight();   }, { passive:false });
+document.getElementById("btnStart2").addEventListener("touchstart", e => { e.preventDefault(); startGame(); }, { passive:false });
+document.getElementById("btnLeft")  .addEventListener("click", goLeft);
+document.getElementById("btnRight") .addEventListener("click", goRight);
+document.getElementById("btnStart2").addEventListener("click", startGame);
+
+// Swipe en el canvas
+let touchStartX = null;
+cv.addEventListener("touchstart", e => { touchStartX = e.touches[0].clientX; }, { passive:true });
+cv.addEventListener("touchend",   e => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 20) { dx < 0 ? goLeft() : goRight(); }
+  else { startGame(); }
+  touchStartX = null;
+}, { passive:true });
 
 updateLives();
 requestAnimationFrame(draw);
