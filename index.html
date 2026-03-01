@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CASIO CAR RACE</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:radial-gradient(ellipse at center,#2a2a2a,#0a0a0a);
+  display:flex;justify-content:center;align-items:center;
+  min-height:100vh;font-family:'Courier New',monospace;
+}
+
+/* ── CUERPO DEL RELOJ ── */
+.watch{
+  background:linear-gradient(160deg,#3a3a3a 0%,#1c1c1c 40%,#111 100%);
+  border-radius:28px 28px 22px 22px;
+  padding:18px 18px 20px;
+  width:360px;
+  border:2px solid #444;
+  box-shadow:0 0 0 1px #111,0 8px 30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08);
+  position:relative;
+}
+.watch::before,.watch::after{
+  content:'';position:absolute;top:55px;
+  width:9px;height:20px;background:#222;
+  border:1px solid #444;border-radius:4px;
+}
+.watch::before{left:-10px}
+.watch::after{right:-10px}
+
+.brand{text-align:center;color:#aaa;font-size:11px;letter-spacing:4px;margin-bottom:2px}
+.model{text-align:center;color:#666;font-size:8px;letter-spacing:3px;margin-bottom:10px}
+
+/* ── BISEL LCD ── */
+.bezel{
+  background:#111;border-radius:8px;padding:7px;
+  border:2px solid #555;box-shadow:inset 0 2px 6px rgba(0,0,0,.8);
+}
+.screen{
+  background:#b0b0a8;border-radius:4px;padding:5px 6px 6px;
+  border:1px solid #888;box-shadow:inset 0 0 10px rgba(0,0,0,.2);
+}
+.indicators{
+  display:flex;justify-content:space-between;
+  font-size:6px;color:#555;font-weight:bold;letter-spacing:.5px;
+  margin-bottom:3px;padding:0 2px;
+}
+.indicators .on{color:#111}
+#game{display:block;width:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+
+.panel{display:flex;align-items:flex-end;margin-top:5px;padding:0 2px;gap:8px}
+.seg7{font-size:26px;font-weight:900;color:#111;line-height:1;letter-spacing:2px;text-shadow:1px 1px 0 #888}
+.unit{font-size:8px;color:#444;font-weight:bold}
+.lives{margin-left:auto;display:flex;gap:5px;align-items:center;padding-bottom:4px}
+.dot{width:10px;height:10px;background:#111;border-radius:50%;box-shadow:0 0 3px #333;transition:all .2s}
+.dot.empty{background:transparent;border:1.5px solid #888;box-shadow:none}
+.score-col{display:flex;flex-direction:column;align-items:flex-start}
+.speedbar-col{display:flex;flex-direction:column;align-items:center;flex:1;padding:0 6px}
+.powerbar{display:flex;gap:3px;align-items:flex-end;margin-top:2px}
+.pb-seg{width:9px;border:1.5px solid #888;border-radius:1px;background:transparent}
+.pb-seg.on{background:#222;border-color:#333}
+#pb1{height:5px}#pb2{height:7px}#pb3{height:9px}#pb4{height:11px}
+#pb5{height:13px}#pb6{height:15px}#pb7{height:17px}#pb8{height:19px}
+
+/* ── BOTONES ── */
+.buttons{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:0 4px}
+.btn{
+  background:linear-gradient(180deg,#2e2e2e,#1a1a1a);
+  color:#777;border:1px solid #444;border-radius:5px;
+  padding:5px 10px;font-size:7px;letter-spacing:1px;
+  cursor:pointer;font-family:monospace;text-transform:uppercase;
+  box-shadow:0 2px 0 #111;transition:all .1s;
+}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn-c{background:linear-gradient(180deg,#383838,#222);color:#999;padding:7px 14px;font-size:8px}
+.footer{text-align:center;color:#444;font-size:7px;letter-spacing:2px;margin-top:8px}
+.hint{text-align:center;color:#555;font-size:8px;letter-spacing:1px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="watch">
+  <div class="brand">CASIO</div>
+  <div class="model">CAR RACE</div>
+  <div class="bezel">
+    <div class="screen">
+      <div class="indicators">
+        <span>REC·SPEED</span>
+        <span>TIME</span>
+        <span>ALARM</span>
+        <span class="on">GAME</span>
+        <span>PM</span>
+      </div>
+      <canvas id="game" width="322" height="150"></canvas>
+      <div class="panel">
+        <div class="score-col">
+          <div class="seg7" id="score">000</div>
+          <div class="unit">KM</div>
+        </div>
+        <div class="speedbar-col">
+          <div class="unit">SPEED</div>
+          <div class="powerbar">
+            <div class="pb-seg" id="pb1"></div>
+            <div class="pb-seg" id="pb2"></div>
+            <div class="pb-seg" id="pb3"></div>
+            <div class="pb-seg" id="pb4"></div>
+            <div class="pb-seg" id="pb5"></div>
+            <div class="pb-seg" id="pb6"></div>
+            <div class="pb-seg" id="pb7"></div>
+            <div class="pb-seg" id="pb8"></div>
+          </div>
+        </div>
+        <div class="lives">
+          <div class="dot" id="d1"></div>
+          <div class="dot" id="d2"></div>
+          <div class="dot" id="d3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="buttons">
+    <button class="btn" id="btnMode">MODE</button>
+    <button class="btn btn-c" id="btnStart">&#9654; START</button>
+    <button class="btn" id="btnReset">RESET</button>
+  </div>
+  <div class="footer">GD-8 &middot; WR 20M &middot; JAPAN</div>
+  <div class="hint">&larr;&rarr; CARRIL &nbsp;|&nbsp; ENTER INICIAR</div>
+</div>
+
+<script>
+const cv  = document.getElementById("game");
+const ctx = cv.getContext("2d");
+const W = cv.width;   // 322
+const H = cv.height;  // 150
+
+/* ─── PALETA GRIS LCD ─────────────────────────────────────── */
+const C = {
+  bg   : "#b0b0a8",  // fondo gris LCD
+  road : "#9e9e96",  // asfalto gris oscuro
+  grass: "#a8a8a0",  // arcenes
+  dark : "#1a1a1a",  // píxeles oscuros (carros, bordes)
+  mid  : "#4a4a4a",  // parabrisas / detalles
+  line : "#c8c8c0",  // guiones blancos de carril
+  tree : "#333328",  // árboles
+};
+
+/* ─── LAYOUT VERTICAL: 3 carriles lado a lado ─────────────── */
+// Carretera: x=26..x=296 (270px) dividida en 3 carriles de 90px
+// Arcén: x=0..25 y x=296..322
+const ROAD_X1 = 26, ROAD_X2 = 296;
+const ROAD_W  = ROAD_X2 - ROAD_X1;          // 270
+const LANE_W  = ROAD_W / 3;                  // 90
+// Centro X de cada carril
+const LANE_CX = [
+  ROAD_X1 + LANE_W * 0 + LANE_W / 2,  // 71
+  ROAD_X1 + LANE_W * 1 + LANE_W / 2,  // 161
+  ROAD_X1 + LANE_W * 2 + LANE_W / 2,  // 251
+];
+// Líneas divisorias verticales
+const DIV_X = [ROAD_X1 + LANE_W, ROAD_X1 + LANE_W * 2]; // 116, 206
+
+/* ─── F1 CAR – IMAGEN PNG ───────────────────────────────── */
+// Caja de colisión centrada en (cx, y)
+const CAR_W = 44;
+const CAR_H = 44;
+
+const carImg = new Image();
+carImg.src = "ChatGPT Image 1 mar 2026, 10_10_33 a.m..png";
+let carImgReady = false;
+carImg.onload = () => { carImgReady = true; };
+
+// hue: grados de hue-rotate para colorear el carro
+// 0 = rojo original, 220 = azul, 105 = verde, 25 = naranja
+function drawCarImage(cx, y, hue, flip) {
+  const W = CAR_W, H = CAR_H;
+  const x = Math.round(cx - W / 2);
+  const yr = Math.round(y);
+  ctx.save();
+  if (flip) {
+    // enemigos vienen de frente → rotar 180°
+    ctx.translate(Math.round(cx), yr + H / 2);
+    ctx.rotate(Math.PI);
+    ctx.translate(-Math.round(cx), -(yr + H / 2));
+  }
+  if (hue !== 0) ctx.filter = `hue-rotate(${hue}deg)`;
+  if (carImgReady) {
+    ctx.drawImage(carImg, x, yr, W, H);
+  } else {
+    // fallback mientras carga
+    ctx.fillStyle = `hsl(${hue}, 75%, 40%)`;
+    ctx.fillRect(x, yr, W, H);
+  }
+  ctx.restore();
+}
+
+/* ─── ÁRBOL (arcén) ──────────────────────────────────────── */
+function drawTree(x, y) {
+  ctx.fillStyle = C.tree;
+  ctx.fillRect(x+4, y+7, 4, 5);   // tronco
+  ctx.fillRect(x+1, y+3, 10, 5);  // copa baja
+  ctx.fillRect(x+2, y,    8, 4);  // copa alta
+}
+
+/* ─── CARRETERA VERTICAL ─────────────────────────────────── */
+let roadOff = 0;  // desplazamiento vertical de marcas
+
+function drawRoad() {
+  // Arcenes
+  ctx.fillStyle = C.grass;
+  ctx.fillRect(0, 0, ROAD_X1, H);
+  ctx.fillRect(ROAD_X2, 0, W - ROAD_X2, H);
+
+  // Asfalto
+  ctx.fillStyle = C.road;
+  ctx.fillRect(ROAD_X1, 0, ROAD_W, H);
+
+  // Bordes de carretera
+  ctx.fillStyle = C.dark;
+  ctx.fillRect(ROAD_X1 - 2, 0, 2, H);
+  ctx.fillRect(ROAD_X2,     0, 2, H);
+
+  // Guiones de divisi&oacute;n de carril (se mueven hacia abajo)
+  const dLen = 16, gap = 12, per = dLen + gap;
+  ctx.fillStyle = C.line;
+  DIV_X.forEach(dx => {
+    for (let y = (roadOff % per) - per; y < H; y += per) {
+      const yS = Math.max(0, y), yE = Math.min(H, y + dLen);
+      if (yE > yS) ctx.fillRect(dx - 1, yS, 2, yE - yS);
+    }
+  });
+
+  // Árboles arcén izquierdo y derecho (se mueven hacia abajo)
+  const tPer = 36;
+  for (let i = 0; i <= Math.ceil(H / tPer) + 1; i++) {
+    const ty = (roadOff % tPer) + i * tPer - tPer - 10;
+    drawTree(2,  ty);
+    drawTree(ROAD_X2 + 4, ty);
+  }
+}
+
+/* ─── ESTADO ─────────────────────────────────────────────── */
+let lane = 1, targetLane = 1, laneX = LANE_CX[1];
+let enemies = [], score = 0, lives = 3;
+let playing = false, over = false;
+let speed = 2.0, spawnTimer = 0, spawnGap = 60, invTimer = 0, totalTicks = 0;
+
+// km/h sube 1 cada 180 frames (~3 seg a 60fps) → llega a 99 en ~5 minutos
+function updateDifficulty() {
+  const kmh = Math.min(Math.floor(score / 180), 99);
+  speed    = 1.2 + (kmh / 99) * 4.8;          // 1.2 px/frame (calm) → 6.0 px/frame (99 km/h)
+  spawnGap = Math.max(26, Math.round(85 - (kmh / 99) * 59)); // 85 → 26 frames
+}
+
+/* ─── SPAWN ──────────────────────────────────────────────── */
+function spawnEnemy() {
+  const l = Math.floor(Math.random() * 3);
+  if (enemies.filter(e => e.l === l && e.y < 60).length) return;
+  enemies.push({ l, y: -CAR_H - 4, cx: LANE_CX[l] });
+}
+
+/* ─── COLISIÓN ───────────────────────────────────────────── */
+const PLAYER_Y = H - CAR_H - 8;
+
+function collision(e) {
+  const px = laneX, py = PLAYER_Y;
+  const ex = e.cx, ey = e.y;
+  return Math.abs(px - ex) < CAR_W - 4 && ey + CAR_H > py && ey < py + CAR_H;
+}
+
+/* ─── SONIDO ─────────────────────────────────────────────── */
+let aCtx = null;
+function ac() { if (!aCtx) aCtx = new (window.AudioContext || window.webkitAudioContext)(); return aCtx; }
+function beep(f, d, t = "square", v = 0.07) {
+  try {
+    const a = ac(), o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination); o.type = t; o.frequency.value = f;
+    g.gain.setValueAtTime(v, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + d / 1000);
+    o.start(); o.stop(a.currentTime + d / 1000);
+  } catch (e) { }
+}
+function crashSnd() { beep(120, 80); setTimeout(() => beep(90, 130), 90); if (lives <= 0) setTimeout(() => beep(70, 350), 240); }
+function moveSnd() { beep(700, 18, "square", 0.04); }
+
+/* ─── HIT ────────────────────────────────────────────────── */
+function hit() {
+  lives--; updateLives(); crashSnd(); invTimer = 80;
+  if (lives <= 0) { playing = false; over = true; }
+}
+
+/* ─── UI ─────────────────────────────────────────────────── */
+function updateScore() {
+  const km = Math.min(Math.floor(score / 60), 999);
+  document.getElementById("score").textContent = String(km).padStart(3, "0");
+}
+function updatePowerBar() {
+  const kmh = Math.min(Math.floor(score / 180), 99);
+  const segs = Math.round((kmh / 99) * 8);
+  for (let i = 1; i <= 8; i++)
+    document.getElementById("pb" + i).classList.toggle("on", i <= segs);
+}
+function updateLives() { for (let i = 1; i <= 3; i++) document.getElementById("d" + i).classList.toggle("empty", i > lives); }
+
+/* ─── TEXTO LCD ──────────────────────────────────────────── */
+function lcdTxt(t, x, y, sz = 11) {
+  ctx.save(); ctx.fillStyle = C.dark; ctx.font = `bold ${sz}px monospace`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(t, x, y); ctx.restore();
+}
+
+/* ─── SUAVIZADO DE CARRIL ────────────────────────────────── */
+function smoothLane() {
+  const tx = LANE_CX[lane];
+  laneX += (tx - laneX) * 0.25;
+}
+
+/* ─── LOOP ───────────────────────────────────────────────── */
+function draw() {
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+  drawRoad();
+
+  // hue por carril: azul, verde, naranja
+  const eHue = [220, 105, 25];
+
+  if (!playing && !over) {
+    /* ── DEMO ── */
+    drawCarImage(LANE_CX[1], PLAYER_Y, 0, false);
+    const dy = H - (totalTicks * 1.5) % (H + CAR_H + 20) + CAR_H;
+    drawCarImage(LANE_CX[0], dy,      eHue[0], false);
+    drawCarImage(LANE_CX[2], dy + 60, eHue[1], false);
+    lcdTxt("PRESS  START", W / 2, H / 2 - 1, 10);
+
+  } else if (over) {
+    drawCarImage(laneX, PLAYER_Y, 0, false);
+    lcdTxt("GAME  OVER", W / 2, H / 2 - 10, 12);
+    lcdTxt("KM  " + String(Math.min(Math.floor(score / 60), 999)).padStart(3, "0"), W / 2, H / 2 + 10, 9);
+
+  } else {
+    roadOff += speed;
+    smoothLane();
+
+    // mover y dibujar enemigos
+    enemies.forEach(e => { e.y += speed; });
+    enemies = enemies.filter(e => e.y < H + CAR_H + 5);
+    enemies.forEach(e => {
+      drawCarImage(e.cx, e.y, eHue[e.l] ?? eHue[0], false);
+    });
+
+    // jugador (parpadea si es invencible)
+    if (invTimer === 0 || totalTicks % 8 < 4)
+      drawCarImage(laneX, PLAYER_Y, 0, false);
+
+    // colisión
+    if (invTimer === 0) enemies.forEach(e => { if (collision(e)) hit(); });
+    if (invTimer > 0) invTimer--;
+
+    // spawn
+    spawnTimer++;
+    if (spawnTimer >= spawnGap) { spawnTimer = 0; spawnEnemy(); }
+
+    // puntaje + dificultad progresiva
+    score++;
+    updateDifficulty();
+    updateScore();
+    updatePowerBar();
+  }
+
+  totalTicks++;
+  requestAnimationFrame(draw);
+}
+
+/* ─── INICIAR ────────────────────────────────────────────── */
+function startGame() {
+  score = 0; lives = 3; lane = 1; laneX = LANE_CX[1];
+  enemies = []; spawnTimer = 0;
+  invTimer = 0; roadOff = 0;
+  playing = true; over = false;
+  updateDifficulty();
+  updateScore(); updatePowerBar(); updateLives();
+}
+
+/* ─── CONTROLES TECLADO ──────────────────────────────────── */
+document.addEventListener("keydown", e => {
+  const k = e.key;
+  if (k === "ArrowLeft" || k === "a" || k === "A") {
+    e.preventDefault();
+    if (playing && !over) { lane = Math.max(0, lane - 1); moveSnd(); }
+  }
+  if (k === "ArrowRight" || k === "d" || k === "D") {
+    e.preventDefault();
+    if (playing && !over) { lane = Math.min(2, lane + 1); moveSnd(); }
+  }
+  if (k === "Enter" || k === " ") { e.preventDefault(); startGame(); }
+});
+
+/* ─── BOTONES ────────────────────────────────────────────── */
+document.getElementById("btnStart").addEventListener("click", startGame);
+document.getElementById("btnReset").addEventListener("click", () => {
+  playing = false; over = false; score = 0; lives = 3;
+  laneX = LANE_CX[1]; lane = 1;
+  document.getElementById("score").textContent = "00"; updateLives();
+});
+
+updateLives();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
