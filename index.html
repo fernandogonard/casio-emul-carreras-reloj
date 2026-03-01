@@ -90,6 +90,39 @@ body{
 .footer{text-align:center;color:#444;font-size:7px;letter-spacing:2px;margin-top:8px}
 .hint{text-align:center;color:#555;font-size:8px;letter-spacing:1px;margin-top:6px}
 
+/* ── MODAL INICIALES ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.78);
+  justify-content:center;align-items:center;z-index:100;
+}
+.modal-overlay.show{display:flex}
+.modal-box{
+  background:#b8b8b0;border:3px solid #222;
+  border-radius:10px;padding:22px 28px;
+  text-align:center;font-family:'Courier New',monospace;
+  box-shadow:0 8px 32px rgba(0,0,0,.8);
+}
+.modal-box h2{font-size:11px;color:#111;letter-spacing:3px;margin-bottom:4px;text-transform:uppercase}
+.modal-box p{font-size:9px;color:#444;margin-bottom:12px;letter-spacing:1px}
+.modal-box input{
+  width:86px;font-size:28px;font-weight:900;
+  text-align:center;letter-spacing:8px;
+  background:#ccc9bb;border:2px solid #333;
+  border-radius:4px;color:#111;
+  font-family:'Courier New',monospace;
+  text-transform:uppercase;
+  padding:2px 4px;
+}
+.modal-box button{
+  display:block;margin:12px auto 0;
+  background:#222;color:#aaa;
+  border:1px solid #555;border-radius:4px;
+  padding:7px 20px;font-family:monospace;
+  font-size:9px;letter-spacing:2px;
+  cursor:pointer;text-transform:uppercase;
+}
+
 /* ── CONTROLES TÁCTILES MÓVIL ── */
 .touch-controls{
   display:none;
@@ -166,7 +199,7 @@ body{
     </div>
   </div>
   <div class="buttons">
-    <button class="btn" id="btnMode">MODE</button>
+    <button class="btn" id="btnMode">PAUSE</button>
     <button class="btn btn-c" id="btnStart">&#9654; START</button>
     <button class="btn" id="btnReset">RESET</button>
   </div>
@@ -179,6 +212,16 @@ body{
   <button class="touch-btn" id="btnRight" aria-label="Derecha">&#9654;</button>
 </div>
 </div><!-- /wrapper -->
+
+<!-- MODAL INICIALES -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h2>&#127942; TOP 5</h2>
+    <p>INGRESÁ TUS INICIALES</p>
+    <input id="initialsInput" maxlength="3" autocomplete="off" spellcheck="false" placeholder="AAA">
+    <button id="btnSaveScore">GUARDAR</button>
+  </div>
+</div>
 
 <script>
 const cv  = document.getElementById("game");
@@ -294,7 +337,7 @@ function drawRoad() {
 /* ─── ESTADO ─────────────────────────────────────────────── */
 let lane = 1, targetLane = 1, laneX = LANE_CX[1];
 let enemies = [], score = 0, lives = 3;
-let playing = false, over = false;
+let playing = false, over = false, paused = false;
 let speed = 2.0, spawnTimer = 0, spawnGap = 60, invTimer = 0, totalTicks = 0;
 
 // km/h sube 1 cada 180 frames (~3 seg a 60fps) → llega a 99 en ~5 minutos
@@ -338,9 +381,43 @@ function moveSnd() { beep(700, 18, "square", 0.04); }
 /* ─── HIT ────────────────────────────────────────────────── */
 function hit() {
   lives--; updateLives(); crashSnd(); invTimer = 80;
-  if (lives <= 0) { playing = false; over = true; }
+  if (lives <= 0) { playing = false; over = true; paused = false; setTimeout(checkHighScore, 400); }
 }
-
+/* ─── TOP 5 SCORES ───────────────────────────────────────────── */
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem("carRaceTop5") || "[]"); } catch(e) { return []; }
+}
+function saveScores(arr) {
+  localStorage.setItem("carRaceTop5", JSON.stringify(arr.slice(0, 5)));
+}
+function getKm() { return Math.min(Math.floor(score / 60), 999); }
+function qualifies() {
+  const top = loadScores();
+  return top.length < 5 || getKm() > (top[top.length - 1]?.km ?? 0);
+}
+function submitScore(initials) {
+  initials = (initials || "AAA").toUpperCase().replace(/[^A-Z0-9]/g,"?").padEnd(3,"?").slice(0,3);
+  const top = loadScores();
+  top.push({ initials, km: getKm() });
+  top.sort((a, b) => b.km - a.km);
+  saveScores(top);
+}
+function checkHighScore() {
+  if (!qualifies()) return;
+  const inp = document.getElementById("initialsInput");
+  inp.value = "";
+  document.getElementById("modalOverlay").classList.add("show");
+  setTimeout(() => inp.focus(), 80);
+}
+function drawTop5() {
+  const top = loadScores();
+  if (!top.length) return;
+  lcdTxt("TOP 5", W / 2, 8, 8);
+  top.forEach((e, i) => {
+    const km = String(e.km).padStart(3, "0");
+    lcdTxt(`${i+1} ${e.initials}  ${km}KM`, W / 2, 20 + i * 13, 8);
+  });
+}
 /* ─── UI ─────────────────────────────────────────────────── */
 function updateScore() {
   const km = Math.min(Math.floor(score / 60), 999);
@@ -385,10 +462,17 @@ function draw() {
 
   } else if (over) {
     drawCarImage(laneX, PLAYER_Y, 0, false);
-    lcdTxt("GAME  OVER", W / 2, H / 2 - 10, 12);
-    lcdTxt("KM  " + String(Math.min(Math.floor(score / 60), 999)).padStart(3, "0"), W / 2, H / 2 + 10, 9);
+    drawTop5();
+    lcdTxt("GAME  OVER", W / 2, H / 2 + 5, 12);
+    lcdTxt("KM  " + String(getKm()).padStart(3, "0"), W / 2, H / 2 + 22, 9);
 
   } else {
+    if (paused) {
+      lcdTxt("PAUSE", W / 2, H / 2, 14);
+      totalTicks++;
+      requestAnimationFrame(draw);
+      return;
+    }
     roadOff += speed;
     smoothLane();
 
@@ -444,14 +528,37 @@ document.addEventListener("keydown", e => {
     if (playing && !over) { lane = Math.min(2, lane + 1); moveSnd(); }
   }
   if (k === "Enter" || k === " ") { e.preventDefault(); startGame(); }
+  if (k === "p" || k === "P") {
+    e.preventDefault();
+    document.getElementById("btnMode").click();
+  }
 });
 
 /* ─── BOTONES ────────────────────────────────────────────── */
+document.getElementById("btnMode").addEventListener("click", () => {
+  if (!playing || over) return;
+  paused = !paused;
+  document.getElementById("btnMode").textContent = paused ? "PLAY" : "PAUSE";
+});
 document.getElementById("btnStart").addEventListener("click", startGame);
 document.getElementById("btnReset").addEventListener("click", () => {
-  playing = false; over = false; score = 0; lives = 3;
+  playing = false; over = false; paused = false; score = 0; lives = 3;
   laneX = LANE_CX[1]; lane = 1;
-  document.getElementById("score").textContent = "00"; updateLives();
+  document.getElementById("score").textContent = "000";
+  document.getElementById("btnMode").textContent = "PAUSE";
+  updateLives();
+});
+// Guardar score desde modal
+document.getElementById("btnSaveScore").addEventListener("click", () => {
+  submitScore(document.getElementById("initialsInput").value);
+  document.getElementById("modalOverlay").classList.remove("show");
+});
+document.getElementById("initialsInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("btnSaveScore").click();
+  e.stopPropagation();
+});
+document.getElementById("initialsInput").addEventListener("input", e => {
+  e.target.value = e.target.value.toUpperCase();
 });
 
 function goLeft()  { if (playing && !over) { lane = Math.max(0, lane - 1); moveSnd(); } }
