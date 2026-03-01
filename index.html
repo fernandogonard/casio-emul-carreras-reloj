@@ -20,6 +20,9 @@ body{
   display:flex;justify-content:center;align-items:center;
   min-height:100vh;font-family:'Courier New',monospace;
 }
+.wrapper{
+  display:flex;flex-direction:column;align-items:center;
+}
 
 /* ── CUERPO DEL RELOJ ── */
 .watch{
@@ -92,14 +95,15 @@ body{
   display:none;
   justify-content:center;
   align-items:center;
-  gap:40px;
-  margin-top:18px;
+  gap:60px;
+  margin-top:24px;
+  width:100%;
 }
 .touch-btn{
-  width:72px;height:72px;
+  width:80px;height:80px;
   background:linear-gradient(180deg,#2e2e2e,#1a1a1a);
   border:2px solid #555;border-radius:50%;
-  color:#aaa;font-size:30px;line-height:1;
+  color:#aaa;font-size:34px;line-height:1;
   display:flex;justify-content:center;align-items:center;
   cursor:pointer;user-select:none;-webkit-user-select:none;
   box-shadow:0 4px 0 #111,0 0 12px rgba(0,0,0,.6);
@@ -121,6 +125,7 @@ body{
 </head>
 <body>
 
+<div class="wrapper">
 <div class="watch">
   <div class="brand">CASIO</div>
   <div class="model">CAR RACE</div>
@@ -171,9 +176,9 @@ body{
 
 <div class="touch-controls">
   <button class="touch-btn" id="btnLeft"  aria-label="Izquierda">&#9664;</button>
-  <button class="touch-btn" id="btnStart2" aria-label="Iniciar">&#9654;</button>
   <button class="touch-btn" id="btnRight" aria-label="Derecha">&#9654;</button>
 </div>
+</div><!-- /wrapper -->
 
 <script>
 const cv  = document.getElementById("game");
@@ -452,12 +457,10 @@ document.getElementById("btnReset").addEventListener("click", () => {
 function goLeft()  { if (playing && !over) { lane = Math.max(0, lane - 1); moveSnd(); } }
 function goRight() { if (playing && !over) { lane = Math.min(2, lane + 1); moveSnd(); } }
 
-document.getElementById("btnLeft")  .addEventListener("touchstart", e => { e.preventDefault(); goLeft();    }, { passive:false });
-document.getElementById("btnRight") .addEventListener("touchstart", e => { e.preventDefault(); goRight();   }, { passive:false });
-document.getElementById("btnStart2").addEventListener("touchstart", e => { e.preventDefault(); startGame(); }, { passive:false });
+document.getElementById("btnLeft")  .addEventListener("touchstart", e => { e.preventDefault(); goLeft();  }, { passive:false });
+document.getElementById("btnRight") .addEventListener("touchstart", e => { e.preventDefault(); goRight(); }, { passive:false });
 document.getElementById("btnLeft")  .addEventListener("click", goLeft);
 document.getElementById("btnRight") .addEventListener("click", goRight);
-document.getElementById("btnStart2").addEventListener("click", startGame);
 
 // Swipe en el canvas
 let touchStartX = null;
